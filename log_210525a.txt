@@ -1,0 +1,85 @@
+(retinaface_env) ubuntu@ip-172-31-46-244:~/sjyoon/AWS-Neuron-Test$ bash bash_2.sh
+Loading pretrained model from ./weights/Resnet50_Final.pth
+remove prefix 'module.'
+Missing keys:0
+Unused checkpoint keys:0
+Used keys:456
+Finished loading model!
+INFO:Neuron:All operators are compiled by neuron-cc (this does not guarantee that neuron-cc will successfully compile)
+INFO:Neuron:Number of arithmetic operators (pre-compilation) before = 299, fused = 299, percent fused = 100.0%
+INFO:Neuron:Compiling function _NeuronGraph$832 with neuron-cc
+INFO:Neuron:Compiling with command line: '/home/ubuntu/sjyoon/AWS-Neuron-Test/Pytorch_Retinaface/retinaface_env/bin/neuron-cc compile /tmp/tmpk8q8zjve/graph_def.pb --framework TENSORFLOW --pipeline compile SaveTemps --output /tmp/tmpk8q8zjve/graph_def.neff --io-config {"inputs": {"0:0": [[1, 3, 432, 768], "float32"]}, "outputs": ["concat_3:0", "Softmax:0", "concat_5:0"]} --verbose 35'
+............................................05/24/2021 11:12:51 PM ERROR [neuron-cc]: ***************************************************************
+05/24/2021 11:12:51 PM ERROR [neuron-cc]:  An Internal Compiler Error has occurred
+05/24/2021 11:12:51 PM ERROR [neuron-cc]: ***************************************************************
+05/24/2021 11:12:51 PM ERROR [neuron-cc]:
+05/24/2021 11:12:51 PM ERROR [neuron-cc]: Error message:  Non-zero exit status (137) for command: /home/ubuntu/sjyoon/AWS-Neuron-Test/Pytorch_Retinaface/retinaface_env/lib/python3.7/site-packages/neuroncc/starfish/bin/pre_sched --verbose=40 --internal-hyper-parameters=/opt/ml/input/config/hyperparameters.json --tuning=2 --numcores=1  -o bir.unrolled.transforms.presched.bir bir.unrolled.transforms.json > /dev/null 2>&1
+05/24/2021 11:12:51 PM ERROR [neuron-cc]:
+05/24/2021 11:12:51 PM ERROR [neuron-cc]: Error class:    CompilerInternalError
+05/24/2021 11:12:51 PM ERROR [neuron-cc]: Error location: job.PREScheduler.3
+05/24/2021 11:12:51 PM ERROR [neuron-cc]: Command line:   /home/ubuntu/sjyoon/AWS-Neuron-Test/Pytorch_Retinaface/retinaface_env/bin/neuron-cc compile /tmp/tmpk8q8zjve/graph_def.pb --framework TENSORFLOW --pipeline compile SaveTemps --output /tmp/tmpk8q8zjve/graph_def.neff --io-config '{"inputs": {"0:0": [[1, 3, 432, 768], "float32"]}, "outputs": ["concat_3:0", "Softmax:0", "concat_5:0"]}' --verbose 35
+05/24/2021 11:12:51 PM ERROR [neuron-cc]:
+05/24/2021 11:12:51 PM ERROR [neuron-cc]: Internal details:
+05/24/2021 11:12:51 PM ERROR [neuron-cc]:   File "neuroncc/driver/Job.py", line 242, in neuroncc.driver.Job.runSingleInputFn
+05/24/2021 11:12:51 PM ERROR [neuron-cc]:   File "neuroncc/driver/jobs/prescheduler.py", line 39, in neuroncc.driver.jobs.prescheduler.PREScheduler.runSingleInput
+05/24/2021 11:12:51 PM ERROR [neuron-cc]:   File "neuroncc/driver/Job.py", line 176, in neuroncc.driver.Job.Job.shellCommand
+05/24/2021 11:12:51 PM ERROR [neuron-cc]:
+05/24/2021 11:12:51 PM ERROR [neuron-cc]: Version information:
+05/24/2021 11:12:51 PM ERROR [neuron-cc]:   Neuron Compiler version 1.3.7.0+fc8e67ab4
+05/24/2021 11:12:51 PM ERROR [neuron-cc]:
+05/24/2021 11:12:51 PM ERROR [neuron-cc]:   HWM version 1.3.1.0-0
+05/24/2021 11:12:51 PM ERROR [neuron-cc]:   NEFF version 1.0
+05/24/2021 11:12:51 PM ERROR [neuron-cc]:   TVM version 1.3.1.0+0
+05/24/2021 11:12:51 PM ERROR [neuron-cc]:   NumPy version 1.18.5
+05/24/2021 11:12:51 PM ERROR [neuron-cc]:   MXNet not available
+05/24/2021 11:12:51 PM ERROR [neuron-cc]:   TF not available
+05/24/2021 11:12:51 PM ERROR [neuron-cc]:   ONNX not available
+05/24/2021 11:12:51 PM ERROR [neuron-cc]:
+05/24/2021 11:12:51 PM ERROR [neuron-cc]: Artifacts stored in: /tmp/tmpk8q8zjve
+
+Compiler status ERROR
+INFO:Neuron:Compile command returned: 1
+WARNING:Neuron:torch.neuron.trace failed on _NeuronGraph$832; falling back to native python function call
+ERROR:Neuron:neuron-cc failed with the following command line call:
+/home/ubuntu/sjyoon/AWS-Neuron-Test/Pytorch_Retinaface/retinaface_env/bin/neuron-cc compile /tmp/tmpk8q8zjve/graph_def.pb --framework TENSORFLOW --pipeline compile SaveTemps --output /tmp/tmpk8q8zjve/graph_def.neff --io-config '{"inputs": {"0:0": [[1, 3, 432, 768], "float32"]}, "outputs": ["concat_3:0", "Softmax:0", "concat_5:0"]}' --verbose 35
+Traceback (most recent call last):
+  File "/home/ubuntu/sjyoon/AWS-Neuron-Test/Pytorch_Retinaface/retinaface_env/lib/python3.7/site-packages/torch_neuron/convert.py", line 313, in op_converter
+    item, inputs, compiler_workdir=sg_workdir, **kwargs)
+  File "/home/ubuntu/sjyoon/AWS-Neuron-Test/Pytorch_Retinaface/retinaface_env/lib/python3.7/site-packages/torch_neuron/decorators.py", line 191, in trace
+    'neuron-cc failed with the following command line call:\n{}'.format(command))
+subprocess.SubprocessError: neuron-cc failed with the following command line call:
+/home/ubuntu/sjyoon/AWS-Neuron-Test/Pytorch_Retinaface/retinaface_env/bin/neuron-cc compile /tmp/tmpk8q8zjve/graph_def.pb --framework TENSORFLOW --pipeline compile SaveTemps --output /tmp/tmpk8q8zjve/graph_def.neff --io-config '{"inputs": {"0:0": [[1, 3, 432, 768], "float32"]}, "outputs": ["concat_3:0", "Softmax:0", "concat_5:0"]}' --verbose 35
+INFO:Neuron:Number of arithmetic operators (post-compilation) before = 299, compiled = 0, percent compiled = 0.0%
+INFO:Neuron:The neuron partitioner created 1 sub-graphs
+INFO:Neuron:Neuron successfully compiled 0 sub-graphs, Total fused subgraphs = 1, Percent of model sub-graphs successfully compiled = 0.0%
+INFO:Neuron:Compiled these operators (and operator counts) to Neuron:
+INFO:Neuron:Not compiled operators (and operator counts) to Neuron:
+INFO:Neuron: => aten::Int: 13 [supported]
+INFO:Neuron: => aten::_convolution: 82 [supported]
+INFO:Neuron: => aten::add: 18 [supported]
+INFO:Neuron: => aten::batch_norm: 73 [supported]
+INFO:Neuron: => aten::cat: 6 [supported]
+INFO:Neuron: => aten::contiguous: 9 [supported]
+INFO:Neuron: => aten::leaky_relu: 11 [supported]
+INFO:Neuron: => aten::max_pool2d: 1 [supported]
+INFO:Neuron: => aten::permute: 9 [supported]
+INFO:Neuron: => aten::relu: 52 [supported]
+INFO:Neuron: => aten::size: 13 [supported]
+INFO:Neuron: => aten::softmax: 1 [supported]
+INFO:Neuron: => aten::upsample_nearest2d: 2 [supported]
+INFO:Neuron: => aten::view: 9 [supported]
+Traceback (most recent call last):
+  File "./compile_retinaface_resnet50.py", line 58, in <module>
+    neuron_net = torch_neuron.trace(net, image)
+  File "/home/ubuntu/sjyoon/AWS-Neuron-Test/Pytorch_Retinaface/retinaface_env/lib/python3.7/site-packages/torch_neuron/convert.py", line 105, in trace
+    cu.stats_post_compiler(neuron_graph)
+  File "/home/ubuntu/sjyoon/AWS-Neuron-Test/Pytorch_Retinaface/retinaface_env/lib/python3.7/site-packages/torch_neuron/convert.py", line 424, in stats_post_compiler
+    "No operations were successfully partitioned and compiled to neuron for this model - aborting trace!")
+RuntimeError: No operations were successfully partitioned and compiled to neuron for this model - aborting trace!
+Traceback (most recent call last):
+  File "./detect_aws_neuron.py", line 81, in <module>
+    net = torch.jit.load("RetinaFace_model_neuron.pt")
+  File "/home/ubuntu/sjyoon/AWS-Neuron-Test/Pytorch_Retinaface/retinaface_env/lib/python3.7/site-packages/torch/jit/_serialization.py", line 151, in load
+    raise ValueError("The provided filename {} does not exist".format(f))  # type: ignore
+ValueError: The provided filename RetinaFace_model_neuron.pt does not exist
+(retinaface_env) ubuntu@ip-172-31-46-244:~/sjyoon/AWS-Neuron-Test$
