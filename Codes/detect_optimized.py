@@ -13,21 +13,25 @@ from utils.nms.py_cpu_nms import py_cpu_nms
 from models.retinaface import RetinaFace
 from utils.box_utils import decode, decode_landm
 from vujade import vujade_nms as nms_
+from vujade import vujade_profiler as prof_
 
 
 parser = argparse.ArgumentParser(description='RetinaFace')
+# Parameters that can be changed.
+parser.add_argument('--aws_neuron', action="store_true", default=False, help='use the AWS neuron')
+parser.add_argument('--nms_type', type=str, default='nms_torchvision', help='NMS type: nms_cy_ndarr; nms_py_ndarr; nms_torchvision; nms_py_tensor')
+# Fixed parameters
 parser.add_argument('--trained_model_pth', default='./weights/Resnet50_Final.pth', type=str, help='PyTorch model')
 parser.add_argument('--trained_model_neuron', default='./weights/Resnet50_Final_neuron.pt', type=str, help='PyTorch model')
 parser.add_argument('--network', default='resnet50', help='Backbone network mobile0.25 or resnet50')
 parser.add_argument('--cpu', action="store_true", default=True, help='Use cpu inference')
+parser.add_argument('-s', '--save_image', action="store_true", default=False, help='show detection results')
+parser.add_argument('--vis_thres', default=0.6, type=float, help='visualization_threshold')
+# NMS parameters
 parser.add_argument('--confidence_threshold', default=0.02, type=float, help='confidence_threshold')
 parser.add_argument('--top_k', default=5000, type=int, help='top_k')
 parser.add_argument('--nms_threshold', default=0.4, type=float, help='nms_threshold')
 parser.add_argument('--keep_top_k', default=750, type=int, help='keep_top_k')
-parser.add_argument('-s', '--save_image', action="store_true", default=True, help='show detection results')
-parser.add_argument('--vis_thres', default=0.6, type=float, help='visualization_threshold')
-parser.add_argument('--aws_neuron', action="store_true", default=False, help='use the AWS neuron')
-parser.add_argument('--nms_type', type=str, default='nms_torchvision', help='NMS type: nms_cy_ndarr; nms_py_ndarr; nms_torchvision; nms_py_tensor')
 args = parser.parse_args()
 
 
@@ -46,13 +50,13 @@ def check_keys(model, pretrained_state_dict):
 
 def remove_prefix(state_dict, prefix):
     ''' Old style model is stored with all names of parameters sharing common prefix 'module.' '''
-    print('remove prefix \'{}\''.format(prefix))
+    # print('remove prefix \'{}\''.format(prefix))
     f = lambda x: x.split(prefix, 1)[-1] if x.startswith(prefix) else x
     return {f(key): value for key, value in state_dict.items()}
 
 
 def load_model(model, pretrained_path, load_to_cpu):
-    print('Loading pretrained model from {}'.format(pretrained_path))
+    # print('Loading pretrained model from {}'.format(pretrained_path))
     if load_to_cpu:
         pretrained_dict = torch.load(pretrained_path, map_location=lambda storage, loc: storage)
     else:
@@ -80,7 +84,6 @@ if __name__ == '__main__':
     elif args.network == "resnet50":
         cfg = cfg_re50
     # net and model
-    #
 
     if args.aws_neuron is False:
         # PyTorch
@@ -94,48 +97,44 @@ if __name__ == '__main__':
             raise FileNotFoundError('The AWS neuron weights are not existed.')
         else:
             net = torch.jit.load(args.trained_model_neuron)
-    print('Finished loading model!')
+    # print('Finished loading model!')
 
-    # print(net)
+    # Ignore the first attempt
+    ndarr_img = np.random.rand(1, 3, 432, 768).astype(np.float32)
+    tensor_img = torch.from_numpy(ndarr_img).to(device)
+    loc, conf, landms = net(tensor_img)
+
     resize = 1
+    avgmeter_time_net = prof_.AverageMeterTime(_warmup=0)
+    avgmeter_time_total = prof_.AverageMeterTime(_warmup=0)
 
     # testing begin
-    for i in range(100):
+    for i in range(10):
         image_path = "./curve/test.jpg"
         img_raw = cv2.imread(image_path, cv2.IMREAD_COLOR)
-        img_raw = cv2.resize(img_raw, dsize=(768, 432), interpolation=cv2.INTER_LINEAR) # Fixed ndarray shape for the AWS-Neuron
+        img_ori = cv2.resize(img_raw, dsize=(768, 432), interpolation=cv2.INTER_LINEAR) # Fixed ndarray shape for the AWS-Neuron
+        img = img_ori.copy().astype(np.float32)
 
-        img = np.float32(img_raw)
-
-        im_height, im_width, _ = img.shape
-        scale = torch.Tensor([img.shape[1], img.shape[0], img.shape[1], img.shape[0]])
         img -= (104, 117, 123)
         img = img.transpose(2, 0, 1)
-        img = torch.from_numpy(img).unsqueeze(0)
-        img = img.to(device)
-        scale = scale.to(device)
+        img = torch.from_numpy(img).unsqueeze(0).to(device)
+        im_batch, im_channel, im_height, im_width = img.shape
 
-        tic = time.time()
-        loc, conf, landms = net(img)  # forward pass
-        print('net forward time: {:.4f}'.format(time.time() - tic))
+        scale = torch.Tensor([im_width, im_height, im_width, im_height]).to(device)
+        scale1 = torch.Tensor([im_width, im_height, im_width, im_height,
+                               im_width, im_height, im_width, im_height,
+                               im_width, im_height]).to(device)
 
+        # Prior anchor box
         priorbox = PriorBox(cfg, image_size=(im_height, im_width))
         priors = priorbox.forward()
         priors = priors.to(device)
         prior_data = priors.data
-        boxes = decode(loc.data.squeeze(0), prior_data, cfg['variance'])
-        boxes = boxes * scale / resize
-        landms = decode_landm(landms.data.squeeze(0), prior_data, cfg['variance'])
-        scale1 = torch.Tensor([img.shape[3], img.shape[2], img.shape[3], img.shape[2],
-                               img.shape[3], img.shape[2], img.shape[3], img.shape[2],
-                               img.shape[3], img.shape[2]])
-        scale1 = scale1.to(device)
-        landms = landms * scale1 / resize
 
-        if args.nms_type != 'nms_torchvision':
-            boxes = boxes.cpu().numpy()
-            landms = landms.cpu().numpy()
-            scores = conf.squeeze(0).data.cpu().numpy()[:, 1]
+        avgmeter_time_total.tic()
+        avgmeter_time_net.tic()
+        loc, conf, landms = net(img) # forward pass
+        avgmeter_time_net.toc()
 
         dets = nms_.nms_cpu(_loc=loc,
                             _conf=conf,
@@ -143,36 +142,14 @@ if __name__ == '__main__':
                             _prior_data=prior_data,
                             _scale_boxes=scale,
                             _scale_landms=scale1,
-                            _scaling_ratio=resize, _variance=cfg['variance'],
+                            _scaling_ratio=resize,
+                            _variance=cfg['variance'],
                             _confidence_threshold=args.confidence_threshold,
                             _nms_threshold=args.nms_threshold,
                             _top_k=args.top_k,
                             _keep_top_k=args.keep_top_k, _nms=args.nms_type)
 
-        # # ignore low scores
-        # inds = np.where(scores > args.confidence_threshold)[0]
-        # boxes = boxes[inds]
-        # landms = landms[inds]
-        # scores = scores[inds]
-        #
-        # # keep top-K before NMS
-        # order = scores.argsort()[::-1][:args.top_k]
-        # boxes = boxes[order]
-        # landms = landms[order]
-        # scores = scores[order]
-        #
-        # # do NMS
-        # dets = np.hstack((boxes, scores[:, np.newaxis])).astype(np.float32, copy=False)
-        # keep = py_cpu_nms(dets, args.nms_threshold)
-        # # keep = nms(dets, args.nms_threshold,force_cpu=args.cpu)
-        # dets = dets[keep, :]
-        # landms = landms[keep]
-        #
-        # # keep top-K faster NMS
-        # dets = dets[:args.keep_top_k, :]
-        # landms = landms[:args.keep_top_k, :]
-        #
-        # dets = np.concatenate((dets, landms), axis=1)
+        avgmeter_time_total.toc()
 
         # show image
         if args.save_image:
@@ -181,20 +158,20 @@ if __name__ == '__main__':
                     continue
                 text = "{:.4f}".format(b[4])
                 b = list(map(int, b))
-                cv2.rectangle(img_raw, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
+                cv2.rectangle(img_ori, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
                 cx = b[0]
                 cy = b[1] + 12
-                cv2.putText(img_raw, text, (cx, cy),
-                            cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255))
+                cv2.putText(img_ori, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255))
 
                 # landms
-                cv2.circle(img_raw, (b[5], b[6]), 1, (0, 0, 255), 4)
-                cv2.circle(img_raw, (b[7], b[8]), 1, (0, 255, 255), 4)
-                cv2.circle(img_raw, (b[9], b[10]), 1, (255, 0, 255), 4)
-                cv2.circle(img_raw, (b[11], b[12]), 1, (0, 255, 0), 4)
-                cv2.circle(img_raw, (b[13], b[14]), 1, (255, 0, 0), 4)
+                cv2.circle(img_ori, (b[5], b[6]), 1, (0, 0, 255), 4)
+                cv2.circle(img_ori, (b[7], b[8]), 1, (0, 255, 255), 4)
+                cv2.circle(img_ori, (b[9], b[10]), 1, (255, 0, 255), 4)
+                cv2.circle(img_ori, (b[11], b[12]), 1, (0, 255, 0), 4)
+                cv2.circle(img_ori, (b[13], b[14]), 1, (255, 0, 0), 4)
+
             # save image
+            cv2.imwrite('test.jpg', img_ori)
 
-            name = "test.jpg"
-            cv2.imwrite(name, img_raw)
-
+    print('[CNN]   Total time: {:.2f}, Avg. time: {:.2f}'.format(avgmeter_time_net.time_sum, avgmeter_time_net.time_avg))
+    print('[Total] Total time: {:.2f}, Avg. time: {:.2f}'.format(avgmeter_time_total.time_sum, avgmeter_time_total.time_avg))

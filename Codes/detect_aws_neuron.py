@@ -13,9 +13,8 @@ from utils.box_utils import decode, decode_landm
 import time
 
 parser = argparse.ArgumentParser(description='Retinaface')
-
-parser.add_argument('-m', '--trained_model', default='./weights/Resnet50_Final.pth',
-                    type=str, help='Trained state_dict file path to open')
+parser.add_argument('--trained_model_pth', default='./weights/Resnet50_Final.pth', type=str, help='PyTorch model')
+parser.add_argument('--trained_model_neuron', default='./weights/Resnet50_Final_neuron.pt', type=str, help='PyTorch model')
 parser.add_argument('--network', default='resnet50', help='Backbone network mobile0.25 or resnet50')
 parser.add_argument('--cpu', action="store_true", default=False, help='Use cpu inference')
 parser.add_argument('--confidence_threshold', default=0.02, type=float, help='confidence_threshold')
@@ -71,14 +70,14 @@ if __name__ == '__main__':
     elif args.network == "resnet50":
         cfg = cfg_re50
     # net and model
-    # 
+    #
     # PyTorch
     # net = RetinaFace(cfg=cfg, phase = 'test')
-    # net = load_model(net, args.trained_model, args.cpu)
+    # net = load_model(net, args.trained_model_pth, args.cpu)
     # net.eval()
-    # 
+    #
     # AWS-Neuron
-    net = torch.jit.load("RetinaFace_model_neuron.pt")
+    net = torch.jit.load(args.trained_model_neuron)
     print('Finished loading model!')
     # print(net)
     cudnn.benchmark = True
@@ -171,4 +170,3 @@ if __name__ == '__main__':
 
             name = "test.jpg"
             cv2.imwrite(name, img_raw)
-

@@ -42,9 +42,10 @@ def load_model(model, pretrained_path):
 if __name__ == '__main__':
     # Use ResNet50 backbone and pre-trained weights
     cfg = cfg_re50
-    trained_model = './weights/Resnet50_Final.pth'
+    trained_model_pth = './weights/Resnet50_Final.pth'
+    trained_model_neuron = './weights/Resnet50_Final_neuron.pt'
     net = RetinaFace(cfg=cfg, phase='test')
-    net = load_model(net, trained_model)
+    net = load_model(net, trained_model_pth)
     net.eval()
     print('Finished loading model!')
 
@@ -62,7 +63,6 @@ if __name__ == '__main__':
     neuron_output = neuron_net(image)
 
     # Save the compiled model
-    torch.jit.save(neuron_net, "./weights/Resnet50_Final_neuron.pt")
+    torch.jit.save(neuron_net, trained_model_neuron)
 
     print('\nSuccessfully ran inference with the RetinaFace model\n')
-
