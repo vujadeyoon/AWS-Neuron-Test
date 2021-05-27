@@ -62,7 +62,7 @@ if __name__ == '__main__':
     neuron_output = neuron_net(image)
 
     # Save the compiled model
-    torch.jit.save(neuron_net, "RetinaFace_model_neuron.pt")
+    torch.jit.save(neuron_net, "./weights/Resnet50_Final_neuron.pt")
 
     print('\nSuccessfully ran inference with the RetinaFace model\n')
 
