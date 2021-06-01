@@ -24,7 +24,7 @@ parser.add_argument('--nms_type', type=str, default='nms_torchvision', help='NMS
 parser.add_argument('--trained_model_pth', default='./weights/Resnet50_Final.pth', type=str, help='PyTorch model')
 parser.add_argument('--trained_model_neuron', default='./weights/Resnet50_Final_neuron.pt', type=str, help='PyTorch model')
 parser.add_argument('--network', default='resnet50', help='Backbone network mobile0.25 or resnet50')
-parser.add_argument('--cpu', action="store_true", default=True, help='Use cpu inference')
+parser.add_argument('--cpu', action="store_true", default=False, help='Use cpu inference')
 parser.add_argument('-s', '--save_image', action="store_true", default=False, help='show detection results')
 parser.add_argument('--vis_thres', default=0.6, type=float, help='visualization_threshold')
 # NMS parameters

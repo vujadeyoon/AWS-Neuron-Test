@@ -13,6 +13,11 @@ source ${path_base}/pip3_virtulenv/RetinaFace/bin/activate
 cd ${path_base}
 #
 #
+# Test for Native PyTorch on the GPU
+cd ${path_base}/Projects/Pytorch_Retinaface && python3 ./detect_optimized.py
+cd ${path_base}
+#
+#
 # Test for Native PyTorch on the CPU
 cd ${path_base}/Projects/Pytorch_Retinaface && python3 ./detect_optimized.py --cpu
 cd ${path_base}
