@@ -52,8 +52,8 @@ cp ${path_base}/Codes/detect_optimized.py ${path_base}/Projects/Pytorch_Retinafa
 #
 #
 # Test for PyTorch (100 iterations, input image shape: origin)
-cd ${path_base}/Projects/Pytorch_Retinaface && python3 ./detect.py --cpu
-cd ${path_base}
+#cd ${path_base}/Projects/Pytorch_Retinaface && python3 ./detect.py --cpu
+#cd ${path_base}
 #
 #
 # Compile PyTorch model to AWS-Neuron

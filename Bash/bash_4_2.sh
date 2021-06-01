@@ -13,13 +13,12 @@ source ${path_base}/pip3_virtulenv/RetinaFace/bin/activate
 cd ${path_base}
 #
 #
-# Test for AWS-Neuron (100 iterations, input image shape: 768x432): This python3 script, detect_aws_neuron.py is based on the detect.py.
-cd ${path_base}/Projects/Pytorch_Retinaface && python3 ./detect_aws_neuron.py --cpu
+# Test for Native PyTorch on the CPU
+cd ${path_base}/Projects/Pytorch_Retinaface && python3 ./detect_optimized.py --cpu
 cd ${path_base}
 #
 #
-# Test
-# Compile PyTorch model to AWS-Neuron
-cd ${path_base}/Projects/Pytorch_Retinaface && python3 ./detect_optimized.py --cpu
+# Test for AWS neuron on the AWS inf1 chip.
+cd ${path_base}/Projects/Pytorch_Retinaface && python3 ./detect_optimized.py --cpu --aws_neuron
 cd ${path_base}
 
